@@ -24,6 +24,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/EEPROM}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt/src}&quot;"/>
 								</option>
 								<inputType id="io.sloeber.compiler.cpp.sketch.input.502269472" name="CPP source files" superClass="io.sloeber.compiler.cpp.sketch.input"/>
 							</tool>
@@ -34,6 +36,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/EEPROM}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt/src}&quot;"/>
 								</option>
 								<inputType id="io.sloeber.compiler.c.sketch.input.621767824" name="C Source Files" superClass="io.sloeber.compiler.c.sketch.input"/>
 							</tool>
@@ -44,6 +48,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/EEPROM}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt/src}&quot;"/>
 								</option>
 								<inputType id="io.sloeber.compiler.S.sketch.input.1520082697" name="Assembly source files" superClass="io.sloeber.compiler.S.sketch.input"/>
 							</tool>
