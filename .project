@@ -52,6 +52,11 @@
 			<location>/home/ipaev/arduino-1.8.2/hardware/esp8266com/esp8266/libraries/ESP8266WiFi</location>
 		</link>
 		<link>
+			<name>libraries/PubSubClient</name>
+			<type>2</type>
+			<location>/home/ipaev/Arduino/libraries/PubSubClient</location>
+		</link>
+		<link>
 			<name>libraries/esp-mqtt</name>
 			<type>2</type>
 			<location>/home/ipaev/source/Download/EasyIoT-Cloud/libraries/esp-mqtt</location>

@@ -1,5 +1,11 @@
+#define EASYIOT
+
 #include <ESP8266WiFi.h>
+#ifdef EASYIOT
 #include <MQTT.h>
+#else
+#include <PubSubClient.h>
+#endif
 #include <EEPROM.h>
 
 
@@ -9,13 +15,21 @@
 #define AP_SSID     "xxx"
 #define AP_PASSWORD "xxx"  
 
+#ifdef EASYIOT
 #define EIOTCLOUD_USERNAME "xxx"
 #define EIOTCLOUD_PASSWORD "xxx"
 
 // create MQTT object
 #define EIOT_CLOUD_ADDRESS "cloud.iot-playground.com"
+#else
+WiFiClient espClient;
+PubSubClient client(espClient);
 
-
+// Update these with values suitable for your network.
+const char* ssid = "........";
+const char* password = "........";
+const char* mqtt_server = "broker.mqtt-dashboard.com";
+#endif
 
 #define PIN_PUMP         BUILTIN_LED //D0  // nodemcu built in LED
 #define PIN_BUTTON       D3  // nodemcu flash button
@@ -65,9 +79,10 @@ struct StoreStruct {
 
 #define MS_IN_SEC  1000 // 1S  
 
-
+#ifdef EASYIOT
 MQTT myMqtt("", EIOT_CLOUD_ADDRESS, 1883);
-
+#else
+#endif
 // intvariables
 int state;
 bool stepOk = false;
@@ -83,7 +98,28 @@ unsigned long startTime;
 int soilHum;
 int irrigatorCounter;
 
+#ifndef EASYIOT
+void setup_wifi() {
 
+  delay(10);
+  // We start by connecting to a WiFi network
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+#endif
 
 void setup() {
   state = s_idle;
@@ -98,26 +134,29 @@ void setup() {
   
   Serial.begin(115200);
 
-  WiFi.mode(WIFI_STA);  
+#ifdef EASYIOT
+  WiFi.mode(WIFI_STA);
   WiFi.begin(AP_SSID, AP_PASSWORD);
 
   Serial.println();
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(AP_SSID);
-    
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   };
 
   Serial.println("WiFi connected");
-  Serial.println("Connecting to MQTT server");  
+  Serial.println("Connecting to MQTT server");
+#else
+  setup_wifi();
+#endif
 
 
   EEPROM.begin(512);
   loadConfig();
-
 
   //set client id
   // Generate client name based on MAC address and last 8 bits of microsecond counter
@@ -128,20 +167,27 @@ void setup() {
   clientName += macToStr(mac);
   clientName += "-";
   clientName += String(micros() & 0xff, 16);
+#ifdef EASYIOT
   myMqtt.setClientId((char*) clientName.c_str());
-
+#else
+#endif
   Serial.print("MQTT client id:");
   Serial.println(clientName);
 
+#ifdef EASYIOT
   // setup callbacks
   myMqtt.onConnected(myConnectedCb);
   myMqtt.onDisconnected(myDisconnectedCb);
   myMqtt.onPublished(myPublishedCb);
   myMqtt.onData(myDataCb);
-  
+
   //////Serial.println("connect mqtt...");
-  myMqtt.setUserPwd(EIOTCLOUD_USERNAME, EIOTCLOUD_PASSWORD);  
+  myMqtt.setUserPwd(EIOTCLOUD_USERNAME, EIOTCLOUD_PASSWORD);
   myMqtt.connect();
+#else
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
+#endif
 
   delay(500);
   
@@ -149,7 +195,9 @@ void setup() {
   Serial.println(storage.moduleId);
 
 
-  //create module if necessary 
+
+#ifdef EASYIOT
+  //create module if necessary
   if (storage.moduleId == 0)
   {
     //create module
@@ -164,60 +212,62 @@ void setup() {
     }
 
    // set module type
-    Serial.println("Set module type");    
+    Serial.println("Set module type");
     myMqtt.SetModuleType(storage.moduleId, "ZMT_IRRIGATOR");
 
     // create Sensor.Parameter1 - humidity treshold value
-    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" +PARAM_HUMIDITY_TRESHOLD);    
+    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" +PARAM_HUMIDITY_TRESHOLD);
     myMqtt.NewModuleParameter(storage.moduleId, PARAM_HUMIDITY_TRESHOLD);
 
     // set IsCommand
-    Serial.println("set isCommand: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD);    
+    Serial.println("set isCommand: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD);
     myMqtt.SetParameterIsCommand(storage.moduleId, PARAM_HUMIDITY_TRESHOLD, true);
 
 
     // create Sensor.Parameter2
     // Sensor.Parameter2 - manual/auto mode 0 - manual, 1 - auto mode
-    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE);    
+    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE);
     myMqtt.NewModuleParameter(storage.moduleId, PARAM_MANUAL_AUTO_MODE);
 
     // set IsCommand
-    Serial.println("set isCommand: /"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE);    
+    Serial.println("set isCommand: /"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE);
     myMqtt.SetParameterIsCommand(storage.moduleId, PARAM_MANUAL_AUTO_MODE, true);
 
-    
+
     // create Sensor.Parameter3
     // Sensor.Parameter3 - pump on/ pump off
-    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);    
+    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);
     myMqtt.NewModuleParameter(storage.moduleId, PARAM_PUMP_ON);
 
 
     // set IsCommand
-    Serial.println("set isCommand: /"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);    
+    Serial.println("set isCommand: /"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);
     myMqtt.SetParameterIsCommand(storage.moduleId, PARAM_PUMP_ON, true);
 
 
     // create Sensor.Parameter4
     // Sensor.Parameter4 - current soil humidity
-    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);    
+    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
     myMqtt.NewModuleParameter(storage.moduleId, PARAM_HUMIDITY);
 
 
     // set Description
-    Serial.println("set description: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);    
+    Serial.println("set description: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
     myMqtt.SetParameterDescription(storage.moduleId, PARAM_HUMIDITY, "Soil moist.");
 
     // set Unit
-    Serial.println("set Unit: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);    
+    Serial.println("set Unit: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
     myMqtt.SetParameterUnit(storage.moduleId, PARAM_HUMIDITY, "%");
 
     // set dbLogging
-    Serial.println("set Unit: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);    
+    Serial.println("set Unit: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
     myMqtt.SetParameterDBLogging(storage.moduleId, PARAM_HUMIDITY, true);
 
     // save new module id
     saveConfig();
   }
+#else
+#endif
 
   subscribe();
   
@@ -227,12 +277,19 @@ void setup() {
 }
 
 void loop() {
+#ifdef EASYIOT
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
 #ifdef DEBUG        
     Serial.print(".");
 #endif
   }
+#else
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+#endif
 
   int in = digitalRead(PIN_BUTTON);
 
@@ -261,7 +318,7 @@ void loop() {
       valueStr = String("0");
     
     topic  = "/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
-    result = myMqtt.publish(topic, valueStr, 0, 1);
+//    result = myMqtt.publish(topic, valueStr, 0, 1);
 
     Serial.print("Publish topic: ");
     Serial.print(topic);
@@ -276,7 +333,7 @@ void loop() {
     valueStr = String(soilHumidityThreshold);
     
     topic  = "/"+String(storage.moduleId)+ "/"+ PARAM_HUMIDITY_TRESHOLD;
-    result = myMqtt.publish(topic, valueStr, 0, 1);
+//    result = myMqtt.publish(topic, valueStr, 0, 1);
 
     Serial.print("Publish topic: ");
     Serial.print(topic);
@@ -317,7 +374,7 @@ void loop() {
      
      valueStr = String(soilHum);
      topic  = "/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY;
-     result = myMqtt.publish(topic, valueStr, 0, 1);
+//     result = myMqtt.publish(topic, valueStr, 0, 1);
 
      Serial.print("Publish topic: ");
      Serial.print(topic);
@@ -345,7 +402,7 @@ void loop() {
        //esp.send(msgMotorPump.set((uint8_t)1));       
        valueStr = String(1);
        topic  = "/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON;
-       result = myMqtt.publish(topic, valueStr, 0, 1);    
+//       result = myMqtt.publish(topic, valueStr, 0, 1);
 
        Serial.print("Publish topic: ");
        Serial.print(topic);
@@ -364,7 +421,7 @@ void loop() {
        //esp.send(msgMotorPump.set((uint8_t)0));
        valueStr = String(0);
        topic  = "/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON;
-       result = myMqtt.publish(topic, valueStr, 0, 1);    
+//       result = myMqtt.publish(topic, valueStr, 0, 1);
 
        digitalWrite(PIN_PUMP, LOW);
        break;
@@ -430,17 +487,17 @@ boolean IsTimeout()
 
 void subscribe()
 {
-  if (storage.moduleId != 0)
-  {
-    // Sensor.Parameter1 - humidity treshold value
-    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD);
-  
-    // Sensor.Parameter2 - manual/auto mode 0 - manual, 1 - auto mode
-    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE);
-  
-    // Sensor.Parameter3 - pump on/ pump off
-    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);
-  }
+//  if (storage.moduleId != 0)
+//  {
+//    // Sensor.Parameter1 - humidity treshold value
+//    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD);
+//
+//    // Sensor.Parameter2 - manual/auto mode 0 - manual, 1 - auto mode
+//    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE);
+//
+//    // Sensor.Parameter3 - pump on/ pump off
+//    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);
+//  }
 }
 
 
@@ -456,7 +513,7 @@ void myDisconnectedCb() {
   Serial.println("disconnected. try to reconnect...");
 #endif
   delay(500);
-  myMqtt.connect();
+//  myMqtt.connect();
 }
 
 void myPublishedCb() {
@@ -465,6 +522,7 @@ void myPublishedCb() {
 #endif
 }
 
+#ifdef EASYIOT
 void myDataCb(String& topic, String& data) {  
 #ifdef DEBUG  
   Serial.print("Receive topic: ");
@@ -496,3 +554,44 @@ void myDataCb(String& topic, String& data) {
     Serial.println(data);
   }
 }
+#else
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect("ESP8266Client")) {
+      Serial.println("connected");
+      // Once connected, publish an announcement...
+      client.publish("outTopic", "hello world");
+      // ... and resubscribe
+      client.subscribe("inTopic");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (unsigned int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+  // Switch on the LED if an 1 was received as first character
+  if ((char)payload[0] == '1') {
+    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
+    // but actually the LED is on; this is because
+    // it is acive low on the ESP-01)
+  } else {
+    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
+  }
+
+}
+#endif

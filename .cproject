@@ -24,6 +24,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/EEPROM}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt/src}&quot;"/>
 								</option>
@@ -36,6 +38,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/EEPROM}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt/src}&quot;"/>
 								</option>
@@ -48,6 +52,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/EEPROM}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/ESP8266WiFi/src}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt/src}&quot;"/>
 								</option>
