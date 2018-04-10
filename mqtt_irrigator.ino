@@ -1,4 +1,4 @@
-#define EASYIOT
+//#define EASYIOT
 
 #include <ESP8266WiFi.h>
 #ifdef EASYIOT
@@ -33,8 +33,13 @@ const char* mqtt_server = "broker.mqtt-dashboard.com";
 
 #define PIN_PUMP         BUILTIN_LED //D0  // nodemcu built in LED
 #define PIN_BUTTON       D3  // nodemcu flash button
+#ifdef EASYIOT
 #define PIN_HUM_ANALOG   A0  // humidity pin
-
+#else
+#include "HX711_ADC.h"
+//HX711 constructor (dout pin, sck pin)
+HX711_ADC LoadCell(12, 14);
+#endif
 
 #define MAX_ANALOG_VAL         956
 #define MIN_ANALOG_VAL         250
@@ -91,7 +96,11 @@ bool autoMode;
 String valueStr("");
 String topic("");
 boolean result;
+#ifdef EASYIOT
 int lastAnalogReading;
+#else
+float lastAnalogReading;
+#endif
 bool autoModeOld;
 int soilHumidityThresholdOld;
 unsigned long startTime;
@@ -270,9 +279,19 @@ void setup() {
 #endif
 
   subscribe();
-  
+#ifdef EASYIOT
   lastAnalogReading = analogRead(PIN_HUM_ANALOG); 
+#else
+  //TODO: IPAEV
+  long stabilisingtime = 2000; // tare preciscion can be improved by adding a few seconds of stabilising time
+  LoadCell.start(stabilisingtime);
+  LoadCell.setCalFactor(696.0); // user set calibration factor (float)
 
+  LoadCell.update();
+  lastAnalogReading = LoadCell.getData();
+  Serial.print("Load_cell output val: ");
+  Serial.println(lastAnalogReading);
+#endif
   autoModeOld = !autoMode;
 }
 
@@ -345,7 +364,14 @@ void loop() {
   {
     startTime = millis();
     // process every second
+#ifdef EASYIOT
     int aireading = analogRead(PIN_HUM_ANALOG);
+#else
+    LoadCell.update();
+    float aireading = LoadCell.getData();
+    Serial.print("Load_cell output val: ");
+    Serial.println(aireading);
+#endif
 
     Serial.print("Analog value: ");
     Serial.print(aireading);
@@ -355,7 +381,7 @@ void loop() {
     Serial.print(lastAnalogReading); 
    
    // calculate soil humidity in % 
-   int newSoilHum = map(lastAnalogReading, MIN_ANALOG_VAL, MAX_ANALOG_VAL, 100, 0);  
+   int newSoilHum = map(lastAnalogReading, MIN_ANALOG_VAL, MAX_ANALOG_VAL, 0, 100);
    Serial.print(", Soil hum %:");
    Serial.println(newSoilHum); 
         
