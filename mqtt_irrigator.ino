@@ -1,27 +1,23 @@
 //#define EASYIOT
+#include "mqtt_irrigator.h"
 
 #include <ESP8266WiFi.h>
 #ifdef EASYIOT
 #include <MQTT.h>
 #else
 #include <PubSubClient.h>
+//needed for library
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
 #endif
 #include <EEPROM.h>
 
+#include "hx711/hx711.h"
+HX711 loadcell(12, 14);
 
 #define DEBUG
 
-
-#define AP_SSID     "xxx"
-#define AP_PASSWORD "xxx"  
-
-#ifdef EASYIOT
-#define EIOTCLOUD_USERNAME "xxx"
-#define EIOTCLOUD_PASSWORD "xxx"
-
-// create MQTT object
-#define EIOT_CLOUD_ADDRESS "cloud.iot-playground.com"
-#else
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -29,20 +25,10 @@ PubSubClient client(espClient);
 const char* ssid = "........";
 const char* password = "........";
 const char* mqtt_server = "broker.mqtt-dashboard.com";
-#endif
 
-#define PIN_PUMP         BUILTIN_LED //D0  // nodemcu built in LED
+#define PIN_PUMP         LED_BUILTIN //D0  // nodemcu built in LED
+#define PIN_LED		     LED_BUILTIN
 #define PIN_BUTTON       D3  // nodemcu flash button
-#ifdef EASYIOT
-#define PIN_HUM_ANALOG   A0  // humidity pin
-#else
-#include "HX711_ADC.h"
-//HX711 constructor (dout pin, sck pin)
-HX711_ADC LoadCell(12, 14);
-#endif
-
-#define MAX_ANALOG_VAL         956
-#define MIN_ANALOG_VAL         250
 
 #define IRRIGATION_TIME        10 // irrigation time in sec
 #define IRRIGATION_PAUSE_TIME  300 // irrigation pause time in sec - only for auto irrigator
@@ -60,75 +46,35 @@ typedef enum {
 #define CONFIG_START 0
 #define CONFIG_VERSION "v01"
 
-struct StoreStruct {
-  // This is for mere detection if they are your settings
-  char version[4];
-  // The variables of your settings
-  uint moduleId;  // module id
-} storage = {
-  CONFIG_VERSION,
+StoreStruc storage = {
+  .version = CONFIG_VERSION,
   // The default module 0
-  0,
+  .moduleId = 0,  // module id
+  .hx711_cal = {0, 0},
 };
-
-
-
-
-
 
 #define PARAM_HUMIDITY_TRESHOLD   "Sensor.Parameter1"
 #define PARAM_MANUAL_AUTO_MODE    "Sensor.Parameter2"
 #define PARAM_PUMP_ON             "Sensor.Parameter3"
 #define PARAM_HUMIDITY            "Sensor.Parameter4"
 
-
 #define MS_IN_SEC  1000 // 1S  
 
-#ifdef EASYIOT
-MQTT myMqtt("", EIOT_CLOUD_ADDRESS, 1883);
-#else
-#endif
 // intvariables
 int state;
 bool stepOk = false;
-int soilHumidityThreshold;
+float soilHumidityThreshold;
 bool autoMode;
 String valueStr("");
 String topic("");
 boolean result;
-#ifdef EASYIOT
-int lastAnalogReading;
-#else
+
 float lastAnalogReading;
-#endif
 bool autoModeOld;
-int soilHumidityThresholdOld;
+float soilHumidityThresholdOld;
 unsigned long startTime;
-int soilHum;
+float soilHum;
 int irrigatorCounter;
-
-#ifndef EASYIOT
-void setup_wifi() {
-
-  delay(10);
-  // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-#endif
 
 void setup() {
   state = s_idle;
@@ -143,72 +89,38 @@ void setup() {
   
   Serial.begin(115200);
 
-#ifdef EASYIOT
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(AP_SSID, AP_PASSWORD);
+  //WiFiManager
+  //Local intialization. Once its business is done, there is no need to keep it around
+  WiFiManager wifiManager;
+  //reset saved settings
+  //wifiManager.resetSettings();
 
-  Serial.println();
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(AP_SSID);
+  //set custom ip for portal
+  //wifiManager.setAPConfig(IPAddress(10,0,1,1), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  };
+  //fetches ssid and pass from eeprom and tries to connect
+  //if it does not connect it starts an access point with the specified name
+  //here  "AutoConnectAP"
+  //and goes into a blocking loop awaiting configuration
+  //wifiManager.autoConnect("AutoConnectAP");
+  //or use this for auto generated name ESP + ChipID
+  wifiManager.autoConnect();
 
-  Serial.println("WiFi connected");
-  Serial.println("Connecting to MQTT server");
-#else
-  setup_wifi();
-#endif
-
+  //if you get here you have connected to the WiFi
+  Serial.println("connected...yeey :)");
 
   EEPROM.begin(512);
-  loadConfig();
+  loadConfig(&storage);
 
-  //set client id
-  // Generate client name based on MAC address and last 8 bits of microsecond counter
-  String clientName;
-  //clientName += "esp8266-";
-  uint8_t mac[6];
-  WiFi.macAddress(mac);
-  clientName += macToStr(mac);
-  clientName += "-";
-  clientName += String(micros() & 0xff, 16);
-#ifdef EASYIOT
-  myMqtt.setClientId((char*) clientName.c_str());
-#else
-#endif
-  Serial.print("MQTT client id:");
-  Serial.println(clientName);
-
-#ifdef EASYIOT
-  // setup callbacks
-  myMqtt.onConnected(myConnectedCb);
-  myMqtt.onDisconnected(myDisconnectedCb);
-  myMqtt.onPublished(myPublishedCb);
-  myMqtt.onData(myDataCb);
-
-  //////Serial.println("connect mqtt...");
-  myMqtt.setUserPwd(EIOTCLOUD_USERNAME, EIOTCLOUD_PASSWORD);
-  myMqtt.connect();
-#else
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-#endif
 
   delay(500);
-  
-  Serial.print("ModuleId: ");
-  Serial.println(storage.moduleId);
 
-
-
-#ifdef EASYIOT
   //create module if necessary
   if (storage.moduleId == 0)
   {
+#ifdef EASYIOT
     //create module
     Serial.println("create module: /NewModule");
     storage.moduleId = myMqtt.NewModule();
@@ -271,44 +183,28 @@ void setup() {
     // set dbLogging
     Serial.println("set Unit: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
     myMqtt.SetParameterDBLogging(storage.moduleId, PARAM_HUMIDITY, true);
-
-    // save new module id
-    saveConfig();
-  }
 #else
 #endif
+    // save new module id
+    saveConfig(&storage);
+  }
 
   subscribe();
-#ifdef EASYIOT
-  lastAnalogReading = analogRead(PIN_HUM_ANALOG); 
-#else
-  //TODO: IPAEV
-  long stabilisingtime = 2000; // tare preciscion can be improved by adding a few seconds of stabilising time
-  LoadCell.start(stabilisingtime);
-  LoadCell.setCalFactor(696.0); // user set calibration factor (float)
 
-  LoadCell.update();
-  lastAnalogReading = LoadCell.getData();
+  loadcell.set_cal(&storage.hx711_cal);
+  lastAnalogReading = loadcell.get_weight();
   Serial.print("Load_cell output val: ");
   Serial.println(lastAnalogReading);
-#endif
+
   autoModeOld = !autoMode;
 }
 
 void loop() {
-#ifdef EASYIOT
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-#ifdef DEBUG        
-    Serial.print(".");
-#endif
-  }
-#else
+
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
-#endif
 
   int in = digitalRead(PIN_BUTTON);
 
@@ -324,8 +220,6 @@ void loop() {
       state = s_irrigation_stop;
   }
   
-
-
   // post auto mode changes
   if (autoModeOld != autoMode)
   {
@@ -364,14 +258,10 @@ void loop() {
   {
     startTime = millis();
     // process every second
-#ifdef EASYIOT
-    int aireading = analogRead(PIN_HUM_ANALOG);
-#else
-    LoadCell.update();
-    float aireading = LoadCell.getData();
+
+    float aireading = loadcell.get_weight();
     Serial.print("Load_cell output val: ");
     Serial.println(aireading);
-#endif
 
     Serial.print("Analog value: ");
     Serial.print(aireading);
@@ -380,17 +270,8 @@ void loop() {
     lastAnalogReading += (aireading - lastAnalogReading) / 10;  
     Serial.print(lastAnalogReading); 
    
-   // calculate soil humidity in % 
-   int newSoilHum = map(lastAnalogReading, MIN_ANALOG_VAL, MAX_ANALOG_VAL, 0, 100);
-   Serial.print(", Soil hum %:");
-   Serial.println(newSoilHum); 
-        
-   // limit to 0-100%
-   if (newSoilHum < 0)
-      newSoilHum = 0;
-
-    if (newSoilHum > 100)
-      newSoilHum = 100;
+   // calculate soil humidity in %
+   float newSoilHum = lastAnalogReading;
  
    // report soil humidity if changed
    if (soilHum != newSoilHum)
@@ -407,7 +288,6 @@ void loop() {
      Serial.print(" value: ");
      Serial.println(valueStr);  
    }
-   
    
    // irrigator state machine
    switch(state)
@@ -453,26 +333,24 @@ void loop() {
        break;
    }
   }
-  
 }
 
-void loadConfig() {
+void loadConfig(StoreStruc *pStorage) {
   // To make sure there are settings, and they are YOURS!
   // If nothing is found it will use the default settings.
   if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
       EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
       EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2])
-    for (unsigned int t=0; t<sizeof(storage); t++)
-      *((char*)&storage + t) = EEPROM.read(CONFIG_START + t);
+    for (unsigned int t=0; t<sizeof(StoreStruc); t++)
+      *((char*)pStorage + t) = EEPROM.read(CONFIG_START + t);
 }
 
-void saveConfig() {
+void saveConfig(StoreStruc *pStorage) {
   for (unsigned int t=0; t<sizeof(storage); t++)
-    EEPROM.write(CONFIG_START + t, *((char*)&storage + t));
+    EEPROM.write(CONFIG_START + t, *((char*)pStorage + t));
 
   EEPROM.commit();
 }
-
 
 String macToStr(const uint8_t* mac)
 {
@@ -513,8 +391,8 @@ boolean IsTimeout()
 
 void subscribe()
 {
-//  if (storage.moduleId != 0)
-//  {
+  if (storage.moduleId != 0)
+  {
 //    // Sensor.Parameter1 - humidity treshold value
 //    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD);
 //
@@ -523,7 +401,7 @@ void subscribe()
 //
 //    // Sensor.Parameter3 - pump on/ pump off
 //    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);
-//  }
+  }
 }
 
 
@@ -548,39 +426,6 @@ void myPublishedCb() {
 #endif
 }
 
-#ifdef EASYIOT
-void myDataCb(String& topic, String& data) {  
-#ifdef DEBUG  
-  Serial.print("Receive topic: ");
-  Serial.print(topic);
-  Serial.print(": ");
-  Serial.println(data);
-#endif
-  if (topic == String("/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD))
-  {
-    soilHumidityThreshold = data.toInt();
-    Serial.println("soilHumidityThreshold");
-    Serial.println(data);
-  }
-
-  else if (topic == String("/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE))
-  {
-    autoMode = (data == String("1"));
-    Serial.println("Auto mode");
-    Serial.println(data);
-  }
-  else if (topic == String("/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON))
-  {
-    //switchState = (data == String("1"))? true: false;
-    if (data == String("1"))
-      state = s_irrigation_start;
-    else
-      state = s_irrigation_stop;
-    Serial.println("Pump");
-    Serial.println(data);
-  }
-}
-#else
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
@@ -601,6 +446,7 @@ void reconnect() {
     }
   }
 }
+
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -610,14 +456,28 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
 
-  // Switch on the LED if an 1 was received as first character
-  if ((char)payload[0] == '1') {
-    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
-    // but actually the LED is on; this is because
-    // it is acive low on the ESP-01)
-  } else {
-    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
-  }
+  String data = String((char*)payload);
 
+  if (String("/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD).compareTo(topic))
+  {
+    soilHumidityThreshold = data.toFloat();
+    Serial.println("soilHumidityThreshold");
+    Serial.println(data);
+  }
+  else if (String("/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE).compareTo(topic))
+  {
+    autoMode = (data == String("1"));
+    Serial.println("Auto mode");
+    Serial.println(data);
+  }
+  else if (String("/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON).compareTo(topic))
+  {
+    //switchState = (data == String("1"))? true: false;
+    if (data == String("1"))
+      state = s_irrigation_start;
+    else
+      state = s_irrigation_stop;
+    Serial.println("Pump");
+    Serial.println(data);
+  }
 }
-#endif

@@ -34,32 +34,47 @@
 		<link>
 			<name>core/core</name>
 			<type>2</type>
-			<location>/home/ipaev/arduino-1.8.2/hardware/esp8266com/esp8266/cores/esp8266</location>
+			<locationURI>ECLIPSE_HOME/arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/cores/esp8266</locationURI>
 		</link>
 		<link>
 			<name>core/variant</name>
 			<type>2</type>
-			<location>/home/ipaev/arduino-1.8.2/hardware/esp8266com/esp8266/variants/nodemcu</location>
+			<locationURI>ECLIPSE_HOME/arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/variants/nodemcu</locationURI>
+		</link>
+		<link>
+			<name>libraries/DNSServer</name>
+			<type>2</type>
+			<locationURI>ECLIPSE_HOME/arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/libraries/DNSServer</locationURI>
 		</link>
 		<link>
 			<name>libraries/EEPROM</name>
 			<type>2</type>
-			<location>/home/ipaev/arduino-1.8.2/hardware/esp8266com/esp8266/libraries/EEPROM</location>
+			<locationURI>ECLIPSE_HOME/arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/libraries/EEPROM</locationURI>
+		</link>
+		<link>
+			<name>libraries/ESP8266WebServer</name>
+			<type>2</type>
+			<locationURI>ECLIPSE_HOME/arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/libraries/ESP8266WebServer</locationURI>
 		</link>
 		<link>
 			<name>libraries/ESP8266WiFi</name>
 			<type>2</type>
-			<location>/home/ipaev/arduino-1.8.2/hardware/esp8266com/esp8266/libraries/ESP8266WiFi</location>
+			<locationURI>ECLIPSE_HOME/arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/libraries/ESP8266WiFi</locationURI>
 		</link>
 		<link>
 			<name>libraries/PubSubClient</name>
 			<type>2</type>
-			<location>/home/ipaev/Arduino/libraries/PubSubClient</location>
+			<location>/home/users/ipaev/Arduino/libraries/PubSubClient</location>
 		</link>
 		<link>
-			<name>libraries/esp-mqtt</name>
+			<name>libraries/Queuetue_HX711_Library</name>
 			<type>2</type>
-			<location>/home/ipaev/source/Download/EasyIoT-Cloud/libraries/esp-mqtt</location>
+			<locationURI>ECLIPSE_HOME/arduinoPlugin/libraries/Queuetue_HX711_Library/1.0.1</locationURI>
+		</link>
+		<link>
+			<name>libraries/WiFiManager</name>
+			<type>2</type>
+			<location>/home/users/ipaev/Arduino/libraries/WiFiManager</location>
 		</link>
 	</linkedResources>
 </projectDescription>
