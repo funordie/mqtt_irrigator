@@ -1,23 +1,30 @@
-//#define EASYIOT
 #include "mqtt_irrigator.h"
 
 #include <ESP8266WiFi.h>
-#ifdef EASYIOT
-#include <MQTT.h>
-#else
 #include <PubSubClient.h>
 //needed for library
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
-#endif
 #include <EEPROM.h>
-
 #include "hx711/hx711.h"
-HX711 loadcell(12, 14);
 
 #define DEBUG
 
+// GPIO defines
+#define PIN_PUMP         D7                // nodemcu GPIO13
+#define PIN_LED          LED_BUILTIN //D0  // nodemcu GPIO16 built in LED
+#define PIN_BUTTON       D3                // nodemcu GPIO0 flash button
+#define PIN_HX711_DOUT   D2                // nodemcu GPIO4
+#define PIN_HX711_SCK    D1                // nodemcu GPIO5
+//boot pins
+//GPIO15 | D8 NodeMcu | MUST keep LOW,
+//GPIO0  | D3 NodeMcu | HIGH ->RUN MODE, LOW -> FLASH MODE. flash button
+//GPIO2  | D4 NodeMcu | MUST keep HIGH
+
+//free GPIO
+
+//WIFI and MQTT
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -26,13 +33,12 @@ const char* ssid = "........";
 const char* password = "........";
 const char* mqtt_server = "broker.mqtt-dashboard.com";
 
-#define PIN_PUMP         LED_BUILTIN //D0  // nodemcu built in LED
-#define PIN_LED		     LED_BUILTIN
-#define PIN_BUTTON       D3  // nodemcu flash button
+//LoadCell
+HX711 loadcell(PIN_HX711_DOUT, PIN_HX711_SCK);
 
+//IRRIGATOR
 #define IRRIGATION_TIME        10 // irrigation time in sec
 #define IRRIGATION_PAUSE_TIME  300 // irrigation pause time in sec - only for auto irrigator
-
 
 // irrigator state
 typedef enum {
@@ -49,7 +55,7 @@ typedef enum {
 StoreStruc storage = {
   .version = CONFIG_VERSION,
   // The default module 0
-  .moduleId = 0,  // module id
+  .moduleId = {'0'},  // module id
   .hx711_cal = {0, 0},
 };
 
@@ -61,8 +67,7 @@ StoreStruc storage = {
 #define MS_IN_SEC  1000 // 1S  
 
 // intvariables
-int state;
-bool stepOk = false;
+e_state state;
 float soilHumidityThreshold;
 bool autoMode;
 String valueStr("");
@@ -79,10 +84,10 @@ int irrigatorCounter;
 void setup() {
   state = s_idle;
   pinMode(PIN_PUMP, OUTPUT); 
+  pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BUTTON, INPUT);
 
   autoMode = false;
-  stepOk = false;
   soilHumidityThresholdOld = -1;
   startTime = millis();
   soilHum = -1;
@@ -105,9 +110,12 @@ void setup() {
   //wifiManager.autoConnect("AutoConnectAP");
   //or use this for auto generated name ESP + ChipID
   wifiManager.autoConnect();
-
   //if you get here you have connected to the WiFi
   Serial.println("connected...yeey :)");
+
+  uint8_t mac[WL_MAC_ADDR_LENGTH];
+  WiFi.macAddress(mac);
+  macToStr(mac);
 
   EEPROM.begin(512);
   loadConfig(&storage);
@@ -118,8 +126,9 @@ void setup() {
   delay(500);
 
   //create module if necessary
-  if (storage.moduleId == 0)
+  if (strcmp(storage.moduleId, ""))
   {
+	  //TODO: calibrate module
 #ifdef EASYIOT
     //create module
     Serial.println("create module: /NewModule");
@@ -183,7 +192,6 @@ void setup() {
     // set dbLogging
     Serial.println("set Unit: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
     myMqtt.SetParameterDBLogging(storage.moduleId, PARAM_HUMIDITY, true);
-#else
 #endif
     // save new module id
     saveConfig(&storage);
@@ -202,8 +210,10 @@ void setup() {
 void loop() {
 
   if (!client.connected()) {
+	digitalWrite(PIN_LED, LOW);
     reconnect();
   }
+  digitalWrite(PIN_LED, HIGH);
   client.loop();
 
   int in = digitalRead(PIN_BUTTON);
@@ -232,6 +242,7 @@ void loop() {
     
     topic  = "/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
 //    result = myMqtt.publish(topic, valueStr, 0, 1);
+    result = client.publish(topic.c_str(), (const uint8_t *)valueStr.c_str() , 1, 0);
 
     Serial.print("Publish topic: ");
     Serial.print(topic);
@@ -338,11 +349,19 @@ void loop() {
 void loadConfig(StoreStruc *pStorage) {
   // To make sure there are settings, and they are YOURS!
   // If nothing is found it will use the default settings.
-  if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
-      EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
-      EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2])
-    for (unsigned int t=0; t<sizeof(StoreStruc); t++)
-      *((char*)pStorage + t) = EEPROM.read(CONFIG_START + t);
+	if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
+			EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
+			EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2]) {
+		for (unsigned int t=0; t<sizeof(StoreStruc); t++)
+			*((char*)pStorage + t) = EEPROM.read(CONFIG_START + t);
+	}
+	else {
+		//return default settings
+		memset(pStorage, 0x00, sizeof(StoreStruc));
+
+		pStorage->hx711_cal.factor = 1;
+		pStorage->hx711_cal.offset = 0;
+	}
 }
 
 void saveConfig(StoreStruc *pStorage) {
@@ -361,14 +380,6 @@ String macToStr(const uint8_t* mac)
       result += ':';
   }
   return result;
-}
-
-void waitOk()
-{
-  while(!stepOk)
-    delay(100);
- 
-  stepOk = false;
 }
 
 boolean IsTimeout()
@@ -391,39 +402,25 @@ boolean IsTimeout()
 
 void subscribe()
 {
-  if (storage.moduleId != 0)
-  {
-//    // Sensor.Parameter1 - humidity treshold value
-//    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD);
-//
-//    // Sensor.Parameter2 - manual/auto mode 0 - manual, 1 - auto mode
-//    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE);
-//
-//    // Sensor.Parameter3 - pump on/ pump off
-//    myMqtt.subscribe("/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);
-  }
-}
+	if (!strcmp(storage.moduleId, ""))
+	{
 
+		// Sensor.Parameter1 - humidity treshold value
+		topic = "/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
+		client.subscribe(topic.c_str());
 
-void myConnectedCb() {
-#ifdef DEBUG
-  Serial.println("connected to MQTT server");
-#endif
-  subscribe();
-}
+		// Sensor.Parameter1 - humidity treshold value
+		topic = "/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
+		client.subscribe(topic.c_str());
 
-void myDisconnectedCb() {
-#ifdef DEBUG
-  Serial.println("disconnected. try to reconnect...");
-#endif
-  delay(500);
-//  myMqtt.connect();
-}
+		// Sensor.Parameter2 - manual/auto mode 0 - manual, 1 - auto mode
+		topic = "/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
+		client.subscribe(topic.c_str());
 
-void myPublishedCb() {
-#ifdef DEBUG  
-  Serial.println("published.");
-#endif
+		// Sensor.Parameter3 - pump on/ pump off
+		topic = "/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON;
+		client.subscribe(topic.c_str());
+	}
 }
 
 void reconnect() {

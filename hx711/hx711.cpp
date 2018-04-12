@@ -13,6 +13,7 @@
 HX711::HX711(byte output_pin, byte clock_pin) {
   m_LoadCell = new Q2HX711(output_pin, clock_pin);
 }
+
 HX711::~HX711() {
 	delete(m_LoadCell);
 }
@@ -27,11 +28,12 @@ float HX711::get_weight() {
 	Serial.print("get_weight: RAW:");
 	Serial.print(res);
 
-	Serial.print(" Cal: factor:");
+	Serial.print(" Cal [factor:");
 	Serial.print(m_cal.factor);
 
 	Serial.print(" offset:");
 	Serial.print(m_cal.offset);
+	Serial.print("]");
 
 	res = res*m_cal.factor + m_cal.offset;
 	Serial.print(" result:");

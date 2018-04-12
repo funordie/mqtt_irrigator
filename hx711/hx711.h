@@ -25,6 +25,5 @@ private:
 	hx711_cal_t m_cal;
 	Q2HX711 * m_LoadCell;
 };
-void hx711_set_cal(hx711_cal_t * cal);
 
 #endif /* HX711_HX711_H_ */
