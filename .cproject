@@ -53,10 +53,6 @@
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient/src}&quot;"/>
                                     									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt/src}&quot;"/>
-                                    									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/WiFiManager}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/DNSServer}&quot;"/>
@@ -95,10 +91,6 @@
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient/src}&quot;"/>
                                     									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt/src}&quot;"/>
-                                    									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/WiFiManager}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/DNSServer}&quot;"/>
@@ -136,10 +128,6 @@
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/PubSubClient/src}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/esp-mqtt/src}&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;${workspace_loc:/mqtt_irrigator/libraries/WiFiManager}&quot;"/>
                                     									
