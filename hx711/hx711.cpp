@@ -22,11 +22,18 @@ void HX711::set_cal(hx711_cal_t * cal) {
 	memcpy(&m_cal,   cal, sizeof(hx711_cal_t));
 }
 
+long HX711::get_raw() {
+    long raw = m_LoadCell->read();
+    Serial.print("HX711::get_raw: ");
+    Serial.println(raw);
+    return raw;
+}
+
 float HX711::get_weight() {
 
-	float res = m_LoadCell->read();
-	Serial.print("get_weight: RAW:");
-	Serial.print(res);
+	long raw = m_LoadCell->read();
+	Serial.print("HX711::get_weight: RAW:");
+	Serial.print(raw);
 
 	Serial.print(" Cal [factor:");
 	Serial.print(m_cal.factor);
@@ -35,7 +42,7 @@ float HX711::get_weight() {
 	Serial.print(m_cal.offset);
 	Serial.print("]");
 
-	res = res*m_cal.factor + m_cal.offset;
+	float res = raw*m_cal.factor + m_cal.offset;
 	Serial.print(" result:");
 	Serial.println(res);
 

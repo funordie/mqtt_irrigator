@@ -1,5 +1,4 @@
 #include "mqtt_irrigator.h"
-
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 //needed for library
@@ -13,16 +12,19 @@
 
 // GPIO defines
 #define PIN_PUMP         D7                // nodemcu GPIO13
-#define PIN_LED          LED_BUILTIN //D0  // nodemcu GPIO16 built in LED
-#define PIN_BUTTON       D3                // nodemcu GPIO0 flash button
-#define PIN_HX711_DOUT   D2                // nodemcu GPIO4
-#define PIN_HX711_SCK    D1                // nodemcu GPIO5
+#define PIN_LED          D6                // nodemcu GPIO12
+#define PIN_BUTTON       D3                // nodemcu GPIO00 flash button
+#define PIN_HX711_DOUT   D2                // nodemcu GPIO04
+#define PIN_HX711_SCK    D1                // nodemcu GPIO05
+#define PIN_CAL          D5                // nodemcu GPI014
+
 //boot pins
 //GPIO15 | D8 NodeMcu | MUST keep LOW,
-//GPIO0  | D3 NodeMcu | HIGH ->RUN MODE, LOW -> FLASH MODE. flash button
-//GPIO2  | D4 NodeMcu | MUST keep HIGH
+//GPIO00  | D3 NodeMcu | HIGH ->RUN MODE, LOW -> FLASH MODE. flash button
+//GPIO02  | D4 NodeMcu | MUST keep HIGH
 
 //free GPIO
+//GPIO16 | D0 NodeMcu | built in LED | Wake Up
 
 //WIFI and MQTT
 WiFiClient espClient;
@@ -47,7 +49,6 @@ typedef enum {
   s_irrigation       = 2,  // irrigate
   s_irrigation_stop  = 3,  // irrigation stop
 } e_state;
-
 
 #define CONFIG_START 0
 #define CONFIG_VERSION "v01"
@@ -81,11 +82,24 @@ unsigned long startTime;
 float soilHum;
 int irrigatorCounter;
 
+void led_blink(uint8_t gpio, uint16_t count, uint32_t on_time_ms, uint32_t off_time_ms) {
+
+    delay(1000); //1s delay before start
+
+    while(count > 0) {
+        digitalWrite(gpio, HIGH);
+        delay(on_time_ms);
+        digitalWrite(gpio, LOW);
+        delay(off_time_ms);
+    }
+}
+
 void setup() {
   state = s_idle;
   pinMode(PIN_PUMP, OUTPUT); 
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BUTTON, INPUT);
+  pinMode(PIN_CAL, INPUT);
 
   autoMode = false;
   soilHumidityThresholdOld = -1;
@@ -128,71 +142,26 @@ void setup() {
   //create module if necessary
   if (strcmp(storage.moduleId, ""))
   {
-	  //TODO: calibrate module
-#ifdef EASYIOT
-    //create module
-    Serial.println("create module: /NewModule");
-    storage.moduleId = myMqtt.NewModule();
+    if(digitalRead(PIN_CAL) == 1) {
+        //calibrate with ZERO and 1KG tare
 
-    if (storage.moduleId == 0)
-    {
-      Serial.println("Module NOT created. Check module limit");
-      while(1)
-        delay(100);
+        //wait to release PIN_CAL
+        while(digitalRead(PIN_CAL) == 0)
+            delay(100);
+
+        //blink 2 time to indicate cal zero
+        led_blink(PIN_LED, 2, 1000, 1000);
+
+        //get zero cal
+        long zero = loadcell.get_raw();
+
+        //wait PIN_CAL == 1
+        while(digitalRead(PIN_CAL) == 1)
+            delay(100);
+
+
     }
 
-   // set module type
-    Serial.println("Set module type");
-    myMqtt.SetModuleType(storage.moduleId, "ZMT_IRRIGATOR");
-
-    // create Sensor.Parameter1 - humidity treshold value
-    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" +PARAM_HUMIDITY_TRESHOLD);
-    myMqtt.NewModuleParameter(storage.moduleId, PARAM_HUMIDITY_TRESHOLD);
-
-    // set IsCommand
-    Serial.println("set isCommand: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD);
-    myMqtt.SetParameterIsCommand(storage.moduleId, PARAM_HUMIDITY_TRESHOLD, true);
-
-
-    // create Sensor.Parameter2
-    // Sensor.Parameter2 - manual/auto mode 0 - manual, 1 - auto mode
-    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE);
-    myMqtt.NewModuleParameter(storage.moduleId, PARAM_MANUAL_AUTO_MODE);
-
-    // set IsCommand
-    Serial.println("set isCommand: /"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE);
-    myMqtt.SetParameterIsCommand(storage.moduleId, PARAM_MANUAL_AUTO_MODE, true);
-
-
-    // create Sensor.Parameter3
-    // Sensor.Parameter3 - pump on/ pump off
-    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);
-    myMqtt.NewModuleParameter(storage.moduleId, PARAM_PUMP_ON);
-
-
-    // set IsCommand
-    Serial.println("set isCommand: /"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON);
-    myMqtt.SetParameterIsCommand(storage.moduleId, PARAM_PUMP_ON, true);
-
-
-    // create Sensor.Parameter4
-    // Sensor.Parameter4 - current soil humidity
-    Serial.println("new parameter: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
-    myMqtt.NewModuleParameter(storage.moduleId, PARAM_HUMIDITY);
-
-
-    // set Description
-    Serial.println("set description: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
-    myMqtt.SetParameterDescription(storage.moduleId, PARAM_HUMIDITY, "Soil moist.");
-
-    // set Unit
-    Serial.println("set Unit: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
-    myMqtt.SetParameterUnit(storage.moduleId, PARAM_HUMIDITY, "%");
-
-    // set dbLogging
-    Serial.println("set Unit: /"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY);
-    myMqtt.SetParameterDBLogging(storage.moduleId, PARAM_HUMIDITY, true);
-#endif
     // save new module id
     saveConfig(&storage);
   }

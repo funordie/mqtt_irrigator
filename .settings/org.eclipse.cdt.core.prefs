@@ -55,13 +55,13 @@ environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LED/oper
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LED/value=
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_FLAGS/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_FLAGS/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_FLAGS/value=-DLWIP_OPEN_SRC -DTCP_MSS\=536
+environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_FLAGS/value=-DLWIP_OPEN_SRC -DTCP_MSS\=1460
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_INCLUDE/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_INCLUDE/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_INCLUDE/value=lwip2/include
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_LIB/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_LIB/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_LIB/value=-llwip2
+environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.LWIP_LIB/value=-llwip2_1460
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.MCU/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.MCU/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/A.BUILD.MCU/value=esp8266
@@ -202,10 +202,10 @@ environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.DTS
 environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.DTS/value=3600
 environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.LOCAL/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.LOCAL/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.LOCAL/value=1523621673
+environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.LOCAL/value=1523622513
 environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.UTC/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.UTC/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.UTC/value=1523610873
+environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.UTC/value=1523611713
 environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.ZONE/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.ZONE/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/A.EXTRA.TIME.ZONE/value=7200
@@ -238,13 +238,13 @@ environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.COMBI
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.COMBINE.PATTERN.1/value="/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/bin/xtensa-lx106-elf-gcc" -g -Wall -Wextra -Os -nostdlib -Wl,--no-check-sections -u call_user_start -u _printf_float -u _scanf_float -Wl,-static "-L/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/lib" "-L/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/ld" "-L/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/libc/xtensa-lx106-elf/lib" "-Teagle.flash.4m1m.ld" -Wl,--gc-sections -Wl,-wrap,system_restart_local -Wl,-wrap,spi_flash_read -o "/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release/mqtt_irrigator.elf" -Wl,--start-group 
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.COMBINE.PATTERN.2/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.COMBINE.PATTERN.2/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.COMBINE.PATTERN.2/value=\ "/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release/arduino.ar" -lhal -lphy -lpp -lnet80211 -llwip2 -lwpa -lcrypto -lmain -lwps -laxtls -lespnow -lsmartconfig -lairkiss -lwpa2 -lstdc++ -lm -lc -lgcc -Wl,--end-group "-L/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release"
+environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.COMBINE.PATTERN.2/value=\ "/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release/arduino.ar" -lhal -lphy -lpp -lnet80211 -llwip2_1460 -lwpa -lcrypto -lmain -lwps -laxtls -lespnow -lsmartconfig -lairkiss -lwpa2 -lstdc++ -lm -lc -lgcc -Wl,--end-group "-L/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release"
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.COMBINE.PATTERN/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.COMBINE.PATTERN/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.COMBINE.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.C.ELF.CMD}" ${A.COMPILER.C.ELF.FLAGS} ${A.COMPILER.C.ELF.EXTRA_FLAGS} -o "${A.BUILD.PATH}/${A.BUILD.PROJECT_NAME}.elf" -Wl,--start-group ${A.OBJECT_FILES} "${A.BUILD.PATH}/arduino.ar" ${A.COMPILER.C.ELF.LIBS} -Wl,--end-group "-L${A.BUILD.PATH}"
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.O.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.O.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.O.PATTERN.1/value="/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/bin/xtensa-lx106-elf-gcc" -D__ets__ -DICACHE_FLASH -U__STRICT_ANSI__ "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/lwip2/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/libc/xtensa-lx106-elf/include" "-I/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release/core" -c -Wall -Wextra -Os -g -Wpointer-arith -Wno-implicit-function-declaration -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals -falign-functions\=4 -std\=gnu99 -ffunction-sections -fdata-sections -DF_CPU\=80000000L -DLWIP_OPEN_SRC -DTCP_MSS\=536  -DARDUINO\=10802 -DARDUINO_ESP8266_NODEMCU -DARDUINO_ARCH_ESP8266 '-DARDUINO_BOARD\="ESP8266_NODEMCU"'  -DESP8266 
+environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.O.PATTERN.1/value="/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/bin/xtensa-lx106-elf-gcc" -D__ets__ -DICACHE_FLASH -U__STRICT_ANSI__ "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/lwip2/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/libc/xtensa-lx106-elf/include" "-I/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release/core" -c -Wall -Wextra -Os -g -Wpointer-arith -Wno-implicit-function-declaration -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals -falign-functions\=4 -std\=gnu99 -ffunction-sections -fdata-sections -DF_CPU\=80000000L -DLWIP_OPEN_SRC -DTCP_MSS\=1460  -DARDUINO\=10802 -DARDUINO_ESP8266_NODEMCU -DARDUINO_ARCH_ESP8266 '-DARDUINO_BOARD\="ESP8266_NODEMCU"'  -DESP8266 
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.O.PATTERN.2/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.O.PATTERN.2/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.O.PATTERN.2/value=\ -o 
@@ -256,7 +256,7 @@ environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.O.PAT
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.C.O.PATTERN/value="${A.COMPILER.PATH}${A.COMPILER.C.CMD}" ${A.COMPILER.CPREPROCESSOR.FLAGS} ${A.COMPILER.C.FLAGS} -DF_CPU\=${A.BUILD.F_CPU} ${A.BUILD.LWIP_FLAGS} ${A.BUILD.DEBUG_PORT} ${A.BUILD.DEBUG_LEVEL} -DARDUINO\=${A.RUNTIME.IDE.VERSION} -DARDUINO_${A.BUILD.BOARD} -DARDUINO_ARCH_${A.BUILD.ARCH} '-DARDUINO_BOARD\="${A.BUILD.BOARD}"' ${A.BUILD.LED} ${A.COMPILER.C.EXTRA_FLAGS} ${A.BUILD.EXTRA_FLAGS} ${A.INCLUDES} "${A.SOURCE_FILE}" -o "${A.OBJECT_FILE}"
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.CPP.O.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.CPP.O.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.CPP.O.PATTERN.1/value="/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/bin/xtensa-lx106-elf-g++" -D__ets__ -DICACHE_FLASH -U__STRICT_ANSI__ "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/lwip2/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/libc/xtensa-lx106-elf/include" "-I/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release/core" -c -Wall -Wextra -Os -g -mlongcalls -mtext-section-literals -fno-exceptions -fno-rtti -falign-functions\=4 -std\=c++11 -ffunction-sections -fdata-sections -DF_CPU\=80000000L -DLWIP_OPEN_SRC -DTCP_MSS\=536  -DARDUINO\=10802 -DARDUINO_ESP8266_NODEMCU -DARDUINO_ARCH_ESP8266 '-DARDUINO_BOARD\="ESP8266_NODEMCU"'  -DESP8266 
+environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.CPP.O.PATTERN.1/value="/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/bin/xtensa-lx106-elf-g++" -D__ets__ -DICACHE_FLASH -U__STRICT_ANSI__ "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/lwip2/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/libc/xtensa-lx106-elf/include" "-I/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release/core" -c -Wall -Wextra -Os -g -mlongcalls -mtext-section-literals -fno-exceptions -fno-rtti -falign-functions\=4 -std\=c++11 -ffunction-sections -fdata-sections -DF_CPU\=80000000L -DLWIP_OPEN_SRC -DTCP_MSS\=1460  -DARDUINO\=10802 -DARDUINO_ESP8266_NODEMCU -DARDUINO_ARCH_ESP8266 '-DARDUINO_BOARD\="ESP8266_NODEMCU"'  -DESP8266 
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.CPP.O.PATTERN.2/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.CPP.O.PATTERN.2/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.CPP.O.PATTERN.2/value=\ -o 
@@ -286,7 +286,7 @@ environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.OUTPUT.
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.OUTPUT.TMP_FILE/value=${A.BUILD.PROJECT_NAME}.bin
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.S.O.PATTERN.1/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.S.O.PATTERN.1/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.S.O.PATTERN.1/value="/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/bin/xtensa-lx106-elf-gcc" -D__ets__ -DICACHE_FLASH -U__STRICT_ANSI__ "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/lwip2/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/libc/xtensa-lx106-elf/include" "-I/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release/core" -c -g -x assembler-with-cpp -mlongcalls -DF_CPU\=80000000L -DLWIP_OPEN_SRC -DTCP_MSS\=536  -DARDUINO\=10802 -DARDUINO_ESP8266_NODEMCU -DARDUINO_ARCH_ESP8266 '-DARDUINO_BOARD\="ESP8266_NODEMCU"'  -DESP8266 
+environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.S.O.PATTERN.1/value="/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/tools/xtensa-lx106-elf-gcc/1.20.0-26-gb404fb9-2/bin/xtensa-lx106-elf-gcc" -D__ets__ -DICACHE_FLASH -U__STRICT_ANSI__ "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/lwip2/include" "-I/home/users/ipaev/Temp/ESP8266/sloeber//arduinoPlugin/packages/esp8266/hardware/esp8266/2.4.1/tools/sdk/libc/xtensa-lx106-elf/include" "-I/home/users/ipaev/Temp/ESP8266/mqtt_irrigator/Release/core" -c -g -x assembler-with-cpp -mlongcalls -DF_CPU\=80000000L -DLWIP_OPEN_SRC -DTCP_MSS\=1460  -DARDUINO\=10802 -DARDUINO_ESP8266_NODEMCU -DARDUINO_ARCH_ESP8266 '-DARDUINO_BOARD\="ESP8266_NODEMCU"'  -DESP8266 
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.S.O.PATTERN.2/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.S.O.PATTERN.2/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/A.RECIPE.S.O.PATTERN.2/value=\ -o 
@@ -460,10 +460,10 @@ environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.BOARD_NAM
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.BOARD_NAME/value=NodeMCU 1.0 (ESP-12E Module)
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.COM_PORT/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.COM_PORT/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.COM_PORT/value=/dev/ttyUSB0
+environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.COM_PORT/value=/dev/ttyS0
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.ECLIPSE_LOCATION/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.ECLIPSE_LOCATION/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.ECLIPSE_LOCATION/value=${eclipse_home}//////////////////////////////////////////////////////////////////////////
+environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.ECLIPSE_LOCATION/value=
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.EXTRA.ALL/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.EXTRA.ALL/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.EXTRA.ALL/value=
@@ -485,36 +485,18 @@ environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.EXTRA.CPP
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.EXTRA.LINK/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.EXTRA.LINK/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.EXTRA.LINK/value=
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.CPUFREQUENCY/delimiter=\:
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.CPUFREQUENCY/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.CPUFREQUENCY/value=80
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.FLASHMODE/delimiter=\:
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.FLASHMODE/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.FLASHMODE/value=DIO
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.FLASHSIZE/delimiter=\:
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.FLASHSIZE/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.FLASHSIZE/value=4M1M
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.RESETMETHOD/delimiter=\:
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.RESETMETHOD/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.RESETMETHOD/value=CK
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.UPLOADSPEED/delimiter=\:
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.UPLOADSPEED/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU.UPLOADSPEED/value=115200
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU/value=CpuFrequency\=80\nDebug\=Disabled\nDebugLevel\=None____\nFlashErase\=all\nFlashSize\=4M1M\nLwIPVariant\=v2mss536\nUploadSpeed\=115200.upload.speed
+environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.MENU/value=CpuFrequency\=80\nDebug\=Disabled\nDebugLevel\=None____\nFlashErase\=all\nFlashSize\=4M1M\nLwIPVariant\=v2mss1460\nUploadSpeed\=115200.upload.speed
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.OBJCOPY/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.OBJCOPY/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.OBJCOPY/value=${A.RECIPE.OBJCOPY.HEX.PATTERN}
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.OS_NAME/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.OS_NAME/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.OS_NAME/value=linux
+environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.OS_NAME/value=
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.PACKAGE_ID/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.PACKAGE_ID/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.PACKAGE_ID/value=esp8266
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.PLATFORM_FILE/delimiter=\:
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.PLATFORM_FILE/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.PLATFORM_FILE/value=/home/ipaev/arduino-1.8.2/hardware/esp8266com/esp8266/platform.txt
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.PROJECT_NAME/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.PROJECT_NAME/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.PROJECT_NAME/value=mqtt_irrigator
@@ -524,12 +506,6 @@ environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.SELECTED.
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.SIZE.SWITCH/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.SIZE.SWITCH/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.SIZE.SWITCH/value=${A.RECIPE.SIZE.PATTERN}
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.UPLOAD.PATTERN/delimiter=\:
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.UPLOAD.PATTERN/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.UPLOAD.PATTERN/value=${A.TOOLS.ESPTOOL.UPLOAD.PATTERN}
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.UPLOAD.PROTOCOL/delimiter=\:
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.UPLOAD.PROTOCOL/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.UPLOAD.PROTOCOL/value=Default
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.UPLOAD/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.UPLOAD/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.UPLOAD/value=Default
@@ -538,7 +514,7 @@ environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.WARNING_L
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.WARNING_LEVEL/value=true
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.WORKSPACE_LOCATION/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.WORKSPACE_LOCATION/operation=replace
-environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.WORKSPACE_LOCATION/value=/home/ipaev/workspace-sloeber
+environment/project/io.sloeber.core.toolChain.release.483283394/JANTJE.WORKSPACE_LOCATION/value=
 environment/project/io.sloeber.core.toolChain.release.483283394/PATH/delimiter=\:
 environment/project/io.sloeber.core.toolChain.release.483283394/PATH/operation=replace
 environment/project/io.sloeber.core.toolChain.release.483283394/PATH/value=${A.COMPILER.PATH}${PathDelimiter}${A.BUILD.GENERIC.PATH}${PathDelimiter}${PATH}

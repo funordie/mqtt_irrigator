@@ -20,6 +20,7 @@ public:
 	HX711(byte output_pin, byte clock_pin);
 	~HX711();
 	float get_weight();
+	long get_raw();
 	void set_cal(hx711_cal_t *);
 private:
 	hx711_cal_t m_cal;
