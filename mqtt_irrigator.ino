@@ -142,8 +142,9 @@ void setup() {
   //create module if necessary
   if (strcmp(storage.moduleId, ""))
   {
+      Serial.print("Calibration is missing!!!!");
     if(digitalRead(PIN_CAL) == 1) {
-        //calibrate with ZERO and 1KG tare
+        //calibrate with ZERO and 1kg tare
 
         //wait to release PIN_CAL
         while(digitalRead(PIN_CAL) == 0)
@@ -159,11 +160,27 @@ void setup() {
         while(digitalRead(PIN_CAL) == 1)
             delay(100);
 
+        //wait PIN_CAL == 0
+        while(digitalRead(PIN_CAL) == 0)
+            delay(100);
 
+        //blink 2 time to indicate cal zero
+        led_blink(PIN_LED, 2, 1000, 1000);
+
+        //get 1kg cal
+        long kg_1 = loadcell.get_raw();
+
+        storage.hx711_cal.factor = (kg_1 - zero)/1;
+        storage.hx711_cal.offset = zero;
+
+        Serial.print("Calibrate value: factor: ");
+        Serial.print(storage.hx711_cal.factor);
+        Serial.print(" offset:");
+        Serial.print(storage.hx711_cal.offset);
+
+        // save new module id
+        saveConfig(&storage);
     }
-
-    // save new module id
-    saveConfig(&storage);
   }
 
   subscribe();
