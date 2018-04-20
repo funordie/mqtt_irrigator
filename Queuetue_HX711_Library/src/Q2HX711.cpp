@@ -37,6 +37,8 @@ long Q2HX711::read() {
    while (!readyToSend());
 
   byte data[3];
+  uint8_t filler = 0x00;
+  long value = 0;
 
   for (byte j = 3; j--;) {
       data[j] = shiftIn(OUT_PIN,CLOCK_PIN, MSBFIRST);
@@ -47,6 +49,18 @@ long Q2HX711::read() {
     digitalWrite(CLOCK_PIN, HIGH);
     digitalWrite(CLOCK_PIN, LOW);
   }
-//  data[2] ^= 0x80;
-  return ((uint32_t) data[2] << 16) | ((uint32_t) data[1] << 8) | (uint32_t) data[0];
+  // Replicate the most significant bit to pad out a 32-bit signed integer
+  if (data[2] & 0x80) {
+      filler = 0xFF;
+  } else {
+      filler = 0x00;
+  }
+
+  // Construct a 32-bit signed integer
+  value = ( static_cast<unsigned long>(filler) << 24
+          | static_cast<unsigned long>(data[2]) << 16
+          | static_cast<unsigned long>(data[1]) << 8
+          | static_cast<unsigned long>(data[0]) );
+
+  return value;
 }
