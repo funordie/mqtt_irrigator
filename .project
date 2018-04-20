@@ -67,11 +67,6 @@
 			<location>/home/users/ipaev/Arduino/libraries/PubSubClient</location>
 		</link>
 		<link>
-			<name>libraries/Queuetue_HX711_Library</name>
-			<type>2</type>
-			<locationURI>ECLIPSE_HOME/arduinoPlugin/libraries/Queuetue_HX711_Library/1.0.1</locationURI>
-		</link>
-		<link>
 			<name>libraries/WiFiManager</name>
 			<type>2</type>
 			<location>/home/users/ipaev/Arduino/libraries/WiFiManager</location>
