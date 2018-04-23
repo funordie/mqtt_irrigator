@@ -39,8 +39,7 @@ const char* mqtt_server = "broker.mqtt-dashboard.com";
 HX711 loadcell(PIN_HX711_DOUT, PIN_HX711_SCK);
 
 //IRRIGATOR
-#define IRRIGATION_TIME        10 // irrigation time in sec
-#define IRRIGATION_PAUSE_TIME  300 // irrigation pause time in sec - only for auto irrigator
+#define IRRIGATION_TIME        5000 // irrigation time in msec
 
 // irrigator state
 typedef enum {
@@ -64,23 +63,22 @@ StoreStruc storage = {
 #define PARAM_MANUAL_AUTO_MODE    "Sensor.Parameter2"
 #define PARAM_PUMP_ON             "Sensor.Parameter3"
 #define PARAM_HUMIDITY            "Sensor.Parameter4"
+#define PARAM_HUMIDITY_SETPOINT   "Sensor.Parameter5"
 
 #define MS_IN_SEC  1000 // 1S  
 
 // intvariables
 e_state state;
 float soilHumidityThreshold;
+float soilHumiditySetPoint;
 bool autoMode;
+
+unsigned long startTime;
+float soilHum;
+
 String valueStr("");
 String topic("");
 boolean result;
-
-float lastAnalogReading;
-bool autoModeOld;
-float soilHumidityThresholdOld;
-unsigned long startTime;
-float soilHum;
-int irrigatorCounter;
 
 void led_blink(uint8_t gpio, uint16_t count, uint32_t on_time_ms, uint32_t off_time_ms) {
 
@@ -102,8 +100,6 @@ void setup() {
   pinMode(PIN_CAL, INPUT);
 
   autoMode = false;
-  soilHumidityThresholdOld = -1;
-  startTime = millis();
   soilHum = -1;
   
   Serial.begin(115200);
@@ -186,14 +182,17 @@ void setup() {
   subscribe();
 
   loadcell.set_cal(&storage.hx711_cal);
-  lastAnalogReading = loadcell.get_weight();
+  float AnalogReading = loadcell.get_weight();
   Serial.print("Load_cell output val: ");
-  Serial.println(lastAnalogReading);
-
-  autoModeOld = !autoMode;
+  Serial.println(AnalogReading);
 }
 
 void loop() {
+
+    static float soilHumiditySetpointOld;
+    static float soilHumidityThresholdOld;
+    static bool autoModeOld = !autoMode;
+    static float soilHumOld;
 
   if (!client.connected()) {
 	digitalWrite(PIN_LED, LOW);
@@ -209,11 +208,6 @@ void loop() {
   {
     while(digitalRead(PIN_BUTTON) == 0)
       delay(100);
-
-    if (state == s_idle || state == s_irrigation_start)
-      state = s_irrigation_start;
-    else
-      state = s_irrigation_stop;
   }
   
   // post auto mode changes
@@ -251,29 +245,37 @@ void loop() {
     Serial.println(valueStr);  
   }
   
+  // post setpoint changes
+  if (soilHumiditySetPoint != soilHumiditySetpointOld)
+  {
+    soilHumiditySetpointOld = soilHumiditySetPoint;
+    valueStr = String(soilHumiditySetPoint);
+
+    topic  = "/"+String(storage.moduleId)+ "/"+ PARAM_HUMIDITY_SETPOINT;
+//    result = myMqtt.publish(topic, valueStr, 0, 1);
+
+    Serial.print("Publish topic: ");
+    Serial.print(topic);
+    Serial.print(" value: ");
+    Serial.println(valueStr);
+  }
+
   if (IsTimeout())
   {
-    startTime = millis();
     // process every second
 
     float aireading = loadcell.get_weight();
     Serial.print("Load_cell output val: ");
     Serial.println(aireading);
 
-    Serial.print("Analog value: ");
-    Serial.print(aireading);
-    Serial.print(" ");
     // filter s
-    lastAnalogReading += (aireading - lastAnalogReading) / 10;  
-    Serial.print(lastAnalogReading); 
-   
-   // calculate soil humidity in %
-   float newSoilHum = lastAnalogReading;
+    soilHum += (aireading - soilHum) / 10;
+    Serial.print(soilHum);
  
    // report soil humidity if changed
-   if (soilHum != newSoilHum)
+   if (soilHum != soilHumOld)
    {
-     soilHum = newSoilHum;
+     soilHumOld = soilHum;
      //esp.send(msgHum.set(soilHum)); 
      
      valueStr = String(soilHum);
@@ -289,18 +291,18 @@ void loop() {
    // irrigator state machine
    switch(state)
    {
-     case s_idle:     
-       if (irrigatorCounter <= IRRIGATION_PAUSE_TIME)
-         irrigatorCounter++;
-       
-       if (irrigatorCounter >= IRRIGATION_PAUSE_TIME && autoMode)
+     case s_idle:
+     {
+       if (autoMode)
        {
-         if (soilHum <= soilHumidityThreshold)
-           state = s_irrigation_start;       
-       }         
+         if ((soilHum + soilHumidityThreshold) < soilHumiditySetPoint)
+         state = s_irrigation_start;
+       }
        break;
+     }
      case s_irrigation_start:
-       irrigatorCounter = 0;
+     {
+       startTime = millis();
        digitalWrite(PIN_PUMP, HIGH);
        //esp.send(msgMotorPump.set((uint8_t)1));       
        valueStr = String(1);
@@ -314,20 +316,33 @@ void loop() {
  
        state = s_irrigation;
        break;
+     }
      case s_irrigation:
-       if (irrigatorCounter++ > IRRIGATION_TIME)
+     {
+       unsigned long now = millis();
+       if (now > (startTime + IRRIGATION_TIME))
          state = s_irrigation_stop;
        break;
+     }
      case s_irrigation_stop:
-       irrigatorCounter = 0;
-       state = s_idle;
+     {
+       startTime = 0;
+
        //esp.send(msgMotorPump.set((uint8_t)0));
        valueStr = String(0);
        topic  = "/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON;
 //       result = myMqtt.publish(topic, valueStr, 0, 1);
 
-       digitalWrite(PIN_PUMP, LOW);
+       if (soilHum <= soilHumiditySetPoint) {
+           //start irrigation again, if Humidity is below set point
+           state = s_irrigation_start;
+       }
+       else {
+        digitalWrite(PIN_PUMP, LOW);
+        state = s_idle;
+       }
        break;
+     }
    }
   }
 }
@@ -370,18 +385,20 @@ String macToStr(const uint8_t* mac)
 
 boolean IsTimeout()
 {
+  static unsigned long prev = 0;
   unsigned long now = millis();
-  if (startTime <= now)
+  if (prev <= now)
   {
-    if ( (unsigned long)(now - startTime )  < MS_IN_SEC ) 
+    if ( (unsigned long)(now - prev )  < MS_IN_SEC )
       return false;
   }
   else
   {
-    if ( (unsigned long)(startTime - now) < MS_IN_SEC ) 
+    if ( (unsigned long)(prev - now) < MS_IN_SEC )
       return false;
   }
 
+  prev = now;
   return true;
 }
 
@@ -406,6 +423,11 @@ void subscribe()
 		// Sensor.Parameter3 - pump on/ pump off
 		topic = "/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON;
 		client.subscribe(topic.c_str());
+
+        // Sensor.Parameter5 - humidity setpoint value
+        topic = "/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_SETPOINT;
+        client.subscribe(topic.c_str());
+
 	}
 }
 
@@ -446,6 +468,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
     soilHumidityThreshold = data.toFloat();
     Serial.println("soilHumidityThreshold");
     Serial.println(data);
+  }
+  else if (String("/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_SETPOINT).compareTo(topic))
+  {
+      soilHumiditySetPoint = data.toFloat();
+      Serial.println("soilHumiditySetPoint");
+      Serial.println(data);
   }
   else if (String("/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE).compareTo(topic))
   {
