@@ -73,7 +73,6 @@ float soilHumidityThreshold;
 float soilHumiditySetPoint;
 bool autoMode;
 
-unsigned long startTime;
 float soilHum;
 
 String valueStr("");
@@ -92,6 +91,33 @@ void led_blink(uint8_t gpio, uint16_t count, uint32_t on_time_ms, uint32_t off_t
     }
 }
 
+class Interval {
+public:
+    Interval();
+    ~Interval();
+    unsigned long getValue();
+    void setStart();
+private:
+    unsigned long m_start;
+};
+
+Interval::Interval() {
+    m_start = 0;
+}
+Interval::~Interval() {
+
+}
+void Interval::setStart() {
+    m_start = millis();
+}
+
+unsigned long Interval::getValue() {
+    unsigned long now = millis();
+    return (now - m_start);
+}
+
+Interval interval;
+
 void setup() {
   state = s_idle;
   pinMode(PIN_PUMP, OUTPUT); 
@@ -100,7 +126,6 @@ void setup() {
   pinMode(PIN_CAL, INPUT);
 
   autoMode = false;
-  soilHum = -1;
   
   Serial.begin(115200);
 
@@ -263,14 +288,7 @@ void loop() {
   if (IsTimeout())
   {
     // process every second
-
-    float aireading = loadcell.get_weight();
-    Serial.print("Load_cell output val: ");
-    Serial.println(aireading);
-
-    // filter s
-    soilHum += (aireading - soilHum) / 10;
-    Serial.print(soilHum);
+   soilHum = loadcell.get_weight();
  
    // report soil humidity if changed
    if (soilHum != soilHumOld)
@@ -302,7 +320,7 @@ void loop() {
      }
      case s_irrigation_start:
      {
-       startTime = millis();
+       interval.setStart();
        digitalWrite(PIN_PUMP, HIGH);
        //esp.send(msgMotorPump.set((uint8_t)1));       
        valueStr = String(1);
@@ -319,15 +337,12 @@ void loop() {
      }
      case s_irrigation:
      {
-       unsigned long now = millis();
-       if (now > (startTime + IRRIGATION_TIME))
+       if (interval.getValue() >= IRRIGATION_TIME)
          state = s_irrigation_stop;
        break;
      }
      case s_irrigation_stop:
      {
-       startTime = 0;
-
        //esp.send(msgMotorPump.set((uint8_t)0));
        valueStr = String(0);
        topic  = "/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON;
@@ -387,14 +402,8 @@ boolean IsTimeout()
 {
   static unsigned long prev = 0;
   unsigned long now = millis();
-  if (prev <= now)
-  {
-    if ( (unsigned long)(now - prev )  < MS_IN_SEC )
-      return false;
-  }
-  else
-  {
-    if ( (unsigned long)(prev - now) < MS_IN_SEC )
+
+  if ((now - prev) < MS_IN_SEC) {
       return false;
   }
 
