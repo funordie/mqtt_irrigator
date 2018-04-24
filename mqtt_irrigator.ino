@@ -64,6 +64,7 @@ StoreStruc storage = {
 #define PARAM_HUMIDITY_SETPOINT   "Sensor.Parameter5"
 
 #define MS_IN_SEC  1000 // 1S  
+#define CAL_VALUE 1000 //value in [gr]
 
 // intvariables
 e_state state;
@@ -173,47 +174,54 @@ void setup() {
     //create module if necessary
     if (strcmp(storage.version, CONFIG_VERSION))
     {
-        Serial.print("Calibration is missing!!!!");
-        if(digitalRead(PIN_CAL) == 1) {
-            //calibrate with ZERO and 1kg tare
-#define CAL_VALUE 1
-            //wait to release PIN_CAL
-            while(digitalRead(PIN_CAL) == 0)
-                delay(100);
-
-            //blink 2 time to indicate cal zero
-            led_blink(PIN_LED, 2, 1000, 1000);
-
-            //get zero cal
-            long zero = loadcell.get_raw();
-
-            //wait PIN_CAL == 1
-            while(digitalRead(PIN_CAL) == 1)
-                delay(100);
-
-            //wait PIN_CAL == 0
-            while(digitalRead(PIN_CAL) == 0)
-                delay(100);
-
-            //blink 2 time to indicate cal CAL_VALUE
-            led_blink(PIN_LED, 2, 1000, 1000);
-
-            //get CAL_VALUE cal
-            long full = loadcell.get_raw();
-
-            //fill storage structure
-            storage.hx711_cal.factor = (full - zero)/CAL_VALUE;
-            storage.hx711_cal.offset = zero;
-            memcpy(storage.version, CONFIG_VERSION, sizeof(storage.version));
-            memcpy(storage.moduleId, mac, sizeof(storage.moduleId));
-
-            // save new module id
-            saveConfig(&storage);
+        Serial.printf("Calibration is missing!!!!\n");
+        while(digitalRead(PIN_CAL) == 1) {
+            Serial.printf("Wait for cal zero PIN_CAL == 1");
+            delay(100);
         }
+        //calibrate with ZERO and FULL load
+        //wait to release PIN_CAL
+        while(digitalRead(PIN_CAL) == 0) {
+            Serial.printf("Wait for cal zero PIN_CAL == 0");
+            delay(100);
+        }
+
+        //blink 2 time to indicate cal zero
+        led_blink(PIN_LED, 2, 1000, 1000);
+
+        //get zero cal
+        long zero = loadcell.get_raw();
+
+        //wait PIN_CAL == 1
+        while(digitalRead(PIN_CAL) == 1) {
+            Serial.printf("Wait for cal FULL[%d gr] PIN_CAL == 1", CAL_VALUE);
+            delay(100);
+        }
+
+        //wait PIN_CAL == 0
+        while(digitalRead(PIN_CAL) == 0) {
+            Serial.printf("Wait for cal FULL[%d gr] PIN_CAL == 0", CAL_VALUE);
+            delay(100);
+        }
+
+        //blink 2 time to indicate cal CAL_VALUE
+        led_blink(PIN_LED, 2, 1000, 1000);
+
+        //get CAL_VALUE cal
+        long full = loadcell.get_raw();
+
+        //fill storage structure
+        storage.hx711_cal.factor = (full - zero)/CAL_VALUE;
+        storage.hx711_cal.offset = zero;
+        memcpy(storage.version, CONFIG_VERSION, sizeof(storage.version));
+        memcpy(storage.moduleId, mac, sizeof(storage.moduleId));
+
+        // save new module id
+        saveConfig(&storage);
     }
 
     loadcell.set_cal(&storage.hx711_cal);
-    Serial.printf("Load_cell output val:%f\n", loadcell.get_weight());
+    Serial.printf("Load_cell output val:%f\n\n\n", loadcell.get_weight());
 }
 
 void loop() {
