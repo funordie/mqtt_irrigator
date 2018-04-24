@@ -11,11 +11,13 @@
 #include "hx711/hx711.h"
 #include "include/wl_definitions.h"
 
+#define VERSION_LENGTH 4
+
 typedef struct {
   // This is for mere detection if they are your settings
-  char version[4];
+  char version[VERSION_LENGTH];
   // The variables of your settings
-  char moduleId[WL_MAC_ADDR_LENGTH];  // module id
+  uint8_t moduleId[WL_MAC_ADDR_LENGTH];  // module id
   hx711_cal_t hx711_cal; //load cell calibration
 }StoreStruc;
 

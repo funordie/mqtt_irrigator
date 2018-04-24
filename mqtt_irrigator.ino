@@ -8,8 +8,6 @@
 #include <EEPROM.h>
 #include "hx711/hx711.h"
 
-#define DEBUG
-
 // GPIO defines
 #define PIN_PUMP         D7                // nodemcu GPIO13
 #define PIN_LED          D6                // nodemcu GPIO12
@@ -53,9 +51,9 @@ typedef enum {
 #define CONFIG_VERSION "v01"
 
 StoreStruc storage = {
-        .version = CONFIG_VERSION,
+        .version = "v00",
         // The default module 0
-        .moduleId = {'0'},  // module id
+        .moduleId = {0},  // module id
         .hx711_cal = {0, 0},
 };
 
@@ -129,6 +127,10 @@ void setup() {
 
     Serial.begin(115200);
 
+    /*
+     * WIFI
+    */
+
     //WiFiManager
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
@@ -152,21 +154,29 @@ void setup() {
     WiFi.macAddress(mac);
     macToStr(mac);
 
-    EEPROM.begin(512);
-    loadConfig(&storage);
+    /*
+     * MQTT
+    */
 
     client.setServer(mqtt_server, 1883);
     client.setCallback(callback);
+    subscribe();
 
     delay(500);
 
+    /*
+     * EEPROM
+    */
+    EEPROM.begin(512);
+    loadConfig(&storage);
+
     //create module if necessary
-    if (strcmp(storage.moduleId, ""))
+    if (strcmp(storage.version, CONFIG_VERSION))
     {
         Serial.print("Calibration is missing!!!!");
         if(digitalRead(PIN_CAL) == 1) {
             //calibrate with ZERO and 1kg tare
-
+#define CAL_VALUE 1
             //wait to release PIN_CAL
             while(digitalRead(PIN_CAL) == 0)
                 delay(100);
@@ -185,38 +195,32 @@ void setup() {
             while(digitalRead(PIN_CAL) == 0)
                 delay(100);
 
-            //blink 2 time to indicate cal zero
+            //blink 2 time to indicate cal CAL_VALUE
             led_blink(PIN_LED, 2, 1000, 1000);
 
-            //get 1kg cal
-            long kg_1 = loadcell.get_raw();
+            //get CAL_VALUE cal
+            long full = loadcell.get_raw();
 
-            storage.hx711_cal.factor = (kg_1 - zero)/1;
+            //fill storage structure
+            storage.hx711_cal.factor = (full - zero)/CAL_VALUE;
             storage.hx711_cal.offset = zero;
-
-            Serial.print("Calibrate value: factor: ");
-            Serial.print(storage.hx711_cal.factor);
-            Serial.print(" offset:");
-            Serial.print(storage.hx711_cal.offset);
+            memcpy(storage.version, CONFIG_VERSION, sizeof(storage.version));
+            memcpy(storage.moduleId, mac, sizeof(storage.moduleId));
 
             // save new module id
             saveConfig(&storage);
         }
     }
 
-    subscribe();
-
     loadcell.set_cal(&storage.hx711_cal);
-    float AnalogReading = loadcell.get_weight();
-    Serial.print("Load_cell output val: ");
-    Serial.println(AnalogReading);
+    Serial.printf("Load_cell output val:%f\n", loadcell.get_weight());
 }
 
 void loop() {
 
     static float soilHumiditySetpointOld;
     static float soilHumidityThresholdOld;
-    static bool autoModeOld = !autoMode;
+    static bool autoModeOld;
     static float soilHumOld;
 
     if (!client.connected()) {
@@ -245,14 +249,14 @@ void loop() {
         else
             valueStr = String("0");
 
-        topic  = "/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
+        topic  = "/"+String((char*)storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
         //    result = myMqtt.publish(topic, valueStr, 0, 1);
         result = client.publish(topic.c_str(), (const uint8_t *)valueStr.c_str() , 1, 0);
 
-        Serial.print("Publish topic: ");
-        Serial.print(topic);
-        Serial.print(" value: ");
-        Serial.println(valueStr);
+        Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
+
+        //if mode is change from auto to manual -> stop the pump
+        state = s_irrigation_stop;
     }
 
     // post treshold changes
@@ -261,13 +265,10 @@ void loop() {
         soilHumidityThresholdOld = soilHumidityThreshold;
         valueStr = String(soilHumidityThreshold);
 
-        topic  = "/"+String(storage.moduleId)+ "/"+ PARAM_HUMIDITY_TRESHOLD;
+        topic  = "/"+String((char*)storage.moduleId)+ "/"+ PARAM_HUMIDITY_TRESHOLD;
         //    result = myMqtt.publish(topic, valueStr, 0, 1);
 
-        Serial.print("Publish topic: ");
-        Serial.print(topic);
-        Serial.print(" value: ");
-        Serial.println(valueStr);
+        Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
     }
 
     // post setpoint changes
@@ -276,13 +277,10 @@ void loop() {
         soilHumiditySetpointOld = soilHumiditySetPoint;
         valueStr = String(soilHumiditySetPoint);
 
-        topic  = "/"+String(storage.moduleId)+ "/"+ PARAM_HUMIDITY_SETPOINT;
+        topic  = "/"+String((char*)storage.moduleId)+ "/"+ PARAM_HUMIDITY_SETPOINT;
         //    result = myMqtt.publish(topic, valueStr, 0, 1);
 
-        Serial.print("Publish topic: ");
-        Serial.print(topic);
-        Serial.print(" value: ");
-        Serial.println(valueStr);
+        Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
     }
 
     if (IsTimeout())
@@ -297,13 +295,10 @@ void loop() {
             //esp.send(msgHum.set(soilHum));
 
             valueStr = String(soilHum);
-            topic  = "/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY;
+            topic  = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY;
             //     result = myMqtt.publish(topic, valueStr, 0, 1);
 
-            Serial.print("Publish topic: ");
-            Serial.print(topic);
-            Serial.print(" value: ");
-            Serial.println(valueStr);
+            Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
         }
 
         // irrigator state machine
@@ -311,11 +306,9 @@ void loop() {
         {
         case s_idle:
         {
-            if (autoMode)
-            {
-                if ((soilHum + soilHumidityThreshold) < soilHumiditySetPoint)
+            if (autoMode && ((soilHum + soilHumidityThreshold) < soilHumiditySetPoint))
                     state = s_irrigation_start;
-            }
+
             break;
         }
         case s_irrigation_start:
@@ -324,37 +317,35 @@ void loop() {
             digitalWrite(PIN_PUMP, HIGH);
             //esp.send(msgMotorPump.set((uint8_t)1));
             valueStr = String(1);
-            topic  = "/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON;
+            topic  = "/"+String((char*)storage.moduleId)+ "/" + PARAM_PUMP_ON;
             //       result = myMqtt.publish(topic, valueStr, 0, 1);
 
-            Serial.print("Publish topic: ");
-            Serial.print(topic);
-            Serial.print(" value: ");
-            Serial.println(valueStr);
+            Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
 
             state = s_irrigation;
             break;
         }
         case s_irrigation:
         {
-            if (interval.getValue() >= IRRIGATION_TIME)
-                state = s_irrigation_stop;
+            if (autoMode && (interval.getValue() >= IRRIGATION_TIME))
+                    state = s_irrigation_stop;
+
             break;
         }
         case s_irrigation_stop:
         {
-            //esp.send(msgMotorPump.set((uint8_t)0));
-            valueStr = String(0);
-            topic  = "/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON;
-            //       result = myMqtt.publish(topic, valueStr, 0, 1);
-
-            if (soilHum <= soilHumiditySetPoint) {
+            if ( autoMode && (soilHum <= soilHumiditySetPoint)) {
                 //start irrigation again, if Humidity is below set point
                 state = s_irrigation_start;
             }
             else {
                 digitalWrite(PIN_PUMP, LOW);
                 state = s_idle;
+
+                valueStr = String(0);
+                topic  = "/"+String((char*)storage.moduleId)+ "/" + PARAM_PUMP_ON;
+                //       result = myMqtt.publish(topic, valueStr, 0, 1);
+                Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
             }
             break;
         }
@@ -370,23 +361,29 @@ void loadConfig(StoreStruc *pStorage) {
             EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2]) {
         for (unsigned int t=0; t<sizeof(StoreStruc); t++)
             *((char*)pStorage + t) = EEPROM.read(CONFIG_START + t);
+
+        Serial.printf("loadConfig: factor:%f offset:%f\n",
+                pStorage->hx711_cal.factor,
+                pStorage->hx711_cal.offset);
     }
     else {
-        //return default settings
+        //return zero settings
         memset(pStorage, 0x00, sizeof(StoreStruc));
-
-        pStorage->hx711_cal.factor = 1;
-        pStorage->hx711_cal.offset = 0;
     }
 }
 
 void saveConfig(StoreStruc *pStorage) {
+
+    Serial.printf("saveConfig: factor:%f offset:%f\n",
+            pStorage->hx711_cal.factor,
+            pStorage->hx711_cal.offset);
+
     for (unsigned int t=0; t<sizeof(storage); t++)
         EEPROM.write(CONFIG_START + t, *((char*)pStorage + t));
 
     EEPROM.commit();
 }
-extern unsigned long timer0_millis;
+
 String macToStr(const uint8_t* mac)
 {
     String result;
@@ -413,27 +410,27 @@ boolean IsTimeout()
 
 void subscribe()
 {
-    if (!strcmp(storage.moduleId, ""))
+    if (!strcmp(storage.version, CONFIG_VERSION))
     {
 
         // Sensor.Parameter1 - humidity treshold value
-        topic = "/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
+        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
         client.subscribe(topic.c_str());
 
         // Sensor.Parameter1 - humidity treshold value
-        topic = "/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
+        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
         client.subscribe(topic.c_str());
 
         // Sensor.Parameter2 - manual/auto mode 0 - manual, 1 - auto mode
-        topic = "/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
+        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
         client.subscribe(topic.c_str());
 
         // Sensor.Parameter3 - pump on/ pump off
-        topic = "/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON;
+        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_PUMP_ON;
         client.subscribe(topic.c_str());
 
         // Sensor.Parameter5 - humidity setpoint value
-        topic = "/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_SETPOINT;
+        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_SETPOINT;
         client.subscribe(topic.c_str());
 
     }
@@ -445,15 +442,14 @@ void reconnect() {
         Serial.print("Attempting MQTT connection...");
         // Attempt to connect
         if (client.connect("ESP8266Client")) {
-            Serial.println("connected");
-            // Once connected, publish an announcement...
-            client.publish("outTopic", "hello world");
-            // ... and resubscribe
-            client.subscribe("inTopic");
+            Serial.printf("connected\n");
+//            // Once connected, publish an announcement...
+//            client.publish("outTopic", "hello world");
+//            // ... and resubscribe
+//            client.subscribe("inTopic");
+            subscribe();
         } else {
-            Serial.print("failed, rc=");
-            Serial.print(client.state());
-            Serial.println(" try again in 5 seconds");
+            Serial.printf("failed, rc=%d try again in 5 seconds\n", client.state());
             // Wait 5 seconds before retrying
             delay(5000);
         }
@@ -461,9 +457,7 @@ void reconnect() {
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
-    Serial.print("Message arrived [");
-    Serial.print(topic);
-    Serial.print("] ");
+    Serial.printf("callback: Message arrived [%s] ", topic);
     for (unsigned int i = 0; i < length; i++) {
         Serial.print((char)payload[i]);
     }
@@ -471,32 +465,27 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     String data = String((char*)payload);
 
-    if (String("/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD).compareTo(topic))
+    if (String("/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD).compareTo(topic))
     {
         soilHumidityThreshold = data.toFloat();
-        Serial.println("soilHumidityThreshold");
-        Serial.println(data);
+        Serial.printf("callback: soilHumidityThreshold:%s\n", data.c_str());
     }
-    else if (String("/"+String(storage.moduleId)+ "/" + PARAM_HUMIDITY_SETPOINT).compareTo(topic))
+    else if (String("/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_SETPOINT).compareTo(topic))
     {
         soilHumiditySetPoint = data.toFloat();
-        Serial.println("soilHumiditySetPoint");
-        Serial.println(data);
+        Serial.printf("callback: soilHumiditySetPoint:%s\n", data.c_str());
     }
-    else if (String("/"+String(storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE).compareTo(topic))
+    else if (String("/"+String((char*)storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE).compareTo(topic))
     {
         autoMode = (data == String("1"));
-        Serial.println("Auto mode");
-        Serial.println(data);
+        Serial.printf("callback: Auto mode:%s", data.c_str());
     }
-    else if (String("/"+String(storage.moduleId)+ "/" + PARAM_PUMP_ON).compareTo(topic))
+    else if (String("/"+String((char*)storage.moduleId)+ "/" + PARAM_PUMP_ON).compareTo(topic))
     {
-        //switchState = (data == String("1"))? true: false;
         if (data == String("1"))
             state = s_irrigation_start;
         else
             state = s_irrigation_stop;
-        Serial.println("Pump");
-        Serial.println(data);
+        Serial.printf("callback: Pump:%s\n", data.c_str());
     }
 }
