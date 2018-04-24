@@ -76,7 +76,6 @@ float soilHum;
 
 String valueStr("");
 String topic("");
-boolean result;
 
 void led_blink(uint8_t gpio, uint16_t count, uint32_t on_time_ms, uint32_t off_time_ms) {
 
@@ -221,11 +220,13 @@ void setup() {
     }
 
     loadcell.set_cal(&storage.hx711_cal);
-    Serial.printf("Load_cell output val:%f\n\n\n", loadcell.get_weight());
+    soilHum = loadcell.get_weight();
+    Serial.printf("Load_cell output val:%f\n\n\n", soilHum);
 }
 
 void loop() {
 
+    boolean result;
     static float soilHumiditySetpointOld;
     static float soilHumidityThresholdOld;
     static bool autoModeOld;
@@ -250,6 +251,11 @@ void loop() {
     // post auto mode changes
     if (autoModeOld != autoMode)
     {
+
+        if(autoMode == 0 && autoModeOld == 1) {
+            //if mode is change from auto to manual -> stop the pump
+            state = s_irrigation_stop;
+        }
         autoModeOld = autoMode;
 
         if (autoMode)
@@ -258,13 +264,8 @@ void loop() {
             valueStr = String("0");
 
         topic  = "/"+String((char*)storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
-        //    result = myMqtt.publish(topic, valueStr, 0, 1);
         result = client.publish(topic.c_str(), (const uint8_t *)valueStr.c_str() , 1, 0);
-
-        Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
-
-        //if mode is change from auto to manual -> stop the pump
-        state = s_irrigation_stop;
+        Serial.printf("Publish topic:%s value:%s res:%d\n", topic.c_str(), valueStr.c_str(), result);
     }
 
     // post treshold changes
@@ -274,9 +275,8 @@ void loop() {
         valueStr = String(soilHumidityThreshold);
 
         topic  = "/"+String((char*)storage.moduleId)+ "/"+ PARAM_HUMIDITY_TRESHOLD;
-        //    result = myMqtt.publish(topic, valueStr, 0, 1);
-
-        Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
+        result = client.publish(topic.c_str(), (const uint8_t *)valueStr.c_str() , 1, 0);
+        Serial.printf("Publish topic:%s value:%s res:%d\n", topic.c_str(), valueStr.c_str(), result);
     }
 
     // post setpoint changes
@@ -286,9 +286,8 @@ void loop() {
         valueStr = String(soilHumiditySetPoint);
 
         topic  = "/"+String((char*)storage.moduleId)+ "/"+ PARAM_HUMIDITY_SETPOINT;
-        //    result = myMqtt.publish(topic, valueStr, 0, 1);
-
-        Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
+        result = client.publish(topic.c_str(), (const uint8_t *)valueStr.c_str() , 1, 0);
+        Serial.printf("Publish topic:%s value:%s res:%d\n", topic.c_str(), valueStr.c_str(), result);
     }
 
     if (IsTimeout())
@@ -304,9 +303,8 @@ void loop() {
 
             valueStr = String(soilHum);
             topic  = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY;
-            //     result = myMqtt.publish(topic, valueStr, 0, 1);
-
-            Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
+            result = client.publish(topic.c_str(), (const uint8_t *)valueStr.c_str() , 1, 0);
+            Serial.printf("Publish topic:%s value:%s res:%d\n", topic.c_str(), valueStr.c_str(), result);
         }
 
         // irrigator state machine
@@ -326,9 +324,8 @@ void loop() {
             //esp.send(msgMotorPump.set((uint8_t)1));
             valueStr = String(1);
             topic  = "/"+String((char*)storage.moduleId)+ "/" + PARAM_PUMP_ON;
-            //       result = myMqtt.publish(topic, valueStr, 0, 1);
-
-            Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
+            result = client.publish(topic.c_str(), (const uint8_t *)valueStr.c_str() , 1, 0);
+            Serial.printf("Publish topic:%s value:%s res:%d\n", topic.c_str(), valueStr.c_str(), result);
 
             state = s_irrigation;
             break;
@@ -352,8 +349,8 @@ void loop() {
 
                 valueStr = String(0);
                 topic  = "/"+String((char*)storage.moduleId)+ "/" + PARAM_PUMP_ON;
-                //       result = myMqtt.publish(topic, valueStr, 0, 1);
-                Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
+                result = client.publish(topic.c_str(), (const uint8_t *)valueStr.c_str() , 1, 0);
+                Serial.printf("Publish topic:%s value:%s res:%d\n", topic.c_str(), valueStr.c_str(), result);
             }
             break;
         }
@@ -377,6 +374,8 @@ void loadConfig(StoreStruc *pStorage) {
     else {
         //return zero settings
         memset(pStorage, 0x00, sizeof(StoreStruc));
+
+        Serial.printf("loadConfig: return ZERO\n");
     }
 }
 
@@ -418,38 +417,41 @@ boolean IsTimeout()
 
 void subscribe()
 {
-    if (!strcmp(storage.version, CONFIG_VERSION))
-    {
 
-        // Sensor.Parameter1 - humidity treshold value
-        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
-        client.subscribe(topic.c_str());
+    // Sensor.Parameter1 - humidity treshold value
+    topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
+    client.subscribe(topic.c_str());
 
-        // Sensor.Parameter1 - humidity treshold value
-        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
-        client.subscribe(topic.c_str());
+    // Sensor.Parameter1 - humidity treshold value
+    topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_TRESHOLD;
+    client.subscribe(topic.c_str());
 
-        // Sensor.Parameter2 - manual/auto mode 0 - manual, 1 - auto mode
-        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
-        client.subscribe(topic.c_str());
+    // Sensor.Parameter2 - manual/auto mode 0 - manual, 1 - auto mode
+    topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_MANUAL_AUTO_MODE;
+    client.subscribe(topic.c_str());
 
-        // Sensor.Parameter3 - pump on/ pump off
-        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_PUMP_ON;
-        client.subscribe(topic.c_str());
+    // Sensor.Parameter3 - pump on/ pump off
+    topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_PUMP_ON;
+    client.subscribe(topic.c_str());
 
-        // Sensor.Parameter5 - humidity setpoint value
-        topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_SETPOINT;
-        client.subscribe(topic.c_str());
+    // Sensor.Parameter5 - humidity setpoint value
+    topic = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY_SETPOINT;
+    client.subscribe(topic.c_str());
+}
 
-    }
+void publish() {
+
+    valueStr = String(soilHum);
+    topic  = "/"+String((char*)storage.moduleId)+ "/" + PARAM_HUMIDITY;
+    Serial.printf("Publish topic:%s value:%s\n", topic.c_str(), valueStr.c_str());
 }
 
 void reconnect() {
     // Loop until we're reconnected
     while (!client.connected()) {
-        Serial.print("Attempting MQTT connection...");
+        Serial.printf("Attempting MQTT connection...\n");
         // Attempt to connect
-        if (client.connect("ESP8266Client")) {
+        if (client.connect("ip_ESP8266")) {
             Serial.printf("connected\n");
 //            // Once connected, publish an announcement...
 //            client.publish("outTopic", "hello world");
