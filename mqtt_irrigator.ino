@@ -127,6 +127,16 @@ void setup() {
 
     Serial.begin(115200);
 
+    {
+        byte rtcStore[2];
+
+        ESP.rtcUserMemoryRead(0, (uint32_t*) &rtcStore, sizeof(rtcStore));
+        rtcStore[0] = rtcStore[0]+10;
+        rtcStore[1] = rtcStore[1]+20;
+        ESP.rtcUserMemoryWrite(0, (uint32_t*) &rtcStore, sizeof(rtcStore));
+        Serial.printf("rtcUserMemory:%d %d", rtcStore[0], rtcStore[1]);
+    }
+
     /*
      * WIFI
     */
